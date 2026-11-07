@@ -295,7 +295,7 @@ Zollhaus-Bestellungen verschicken nach erfolgreicher Speicherung best-effort ein
 | `/datenschutz` | Datenschutz |
 | `/agb` | AGB |
 
-## Rechtlicher Hinweis
+## Rechtlicher Hinweis.
 
 Headbang Handwerk ist kein eingetragener gemeinnütziger Verein. Steuerlich absetzbare
 Spendenquittungen können nicht ausgestellt werden. Bei Sponsoring-Zahlungen wird eine
