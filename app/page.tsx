@@ -67,10 +67,19 @@ function getHeroStyles(settings: HomeDisplaySettings): CSSProperties {
   };
 }
 
-function getSectionSpacingStyles(settings: HomeDisplaySettings): CSSProperties {
-  return {
-    marginTop: `clamp(${settings.sectionSpacingMobile}px, 8vw, ${settings.sectionSpacingDesktop}px)`,
-  };
+// Trennlinie zwischen den großen Bereichen: einfarbig im Gold der Mini-Überschriften, so breit wie
+// die Inhaltsspalte. Sie sitzt mittig im eingestellten Bereichsabstand (sectionSpacing* aus
+// „Darstellung und Größen“): je die Hälfte darüber und darunter.
+function SectionDivider({ settings }: { settings: HomeDisplaySettings }) {
+  const half = (value: number) => Math.round(value / 2);
+
+  return (
+    <div
+      aria-hidden="true"
+      className="h-px w-full bg-[color:var(--color-accent-soft)]/45"
+      style={{ marginBlock: `clamp(${half(settings.sectionSpacingMobile)}px, 4vw, ${half(settings.sectionSpacingDesktop)}px)` }}
+    />
+  );
 }
 
 function getSectionTitleStyles(settings: HomeDisplaySettings): CSSProperties {
@@ -579,8 +588,12 @@ export default async function HomePage({
               </section>
             </LiveResizableBox>
 
-            <LiveResizableBox boxKey="home.events.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.events.box')} isAdmin={isAdmin} lockHorizontal className="w-full" applySavedHeight={false}>
-              <section style={getSectionSpacingStyles(layoutSettings)}>
+            {/* Ab hier: Abstand kommt von der Trennlinie. allowPosition={false} ignoriert gespeicherte
+                vertikale Verschiebungen, sonst würden die Bereiche über die Linie gezogen. */}
+            <SectionDivider settings={layoutSettings} />
+
+            <LiveResizableBox boxKey="home.events.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.events.box')} isAdmin={isAdmin} lockHorizontal allowPosition={false} className="w-full" applySavedHeight={false}>
+              <section>
                 <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div className="max-w-3xl">
                     <p className="text-xs font-black uppercase tracking-[0.28em] text-[color:var(--color-accent-soft)]">Live aus dem CMS</p>
@@ -613,8 +626,10 @@ export default async function HomePage({
               </section>
             </LiveResizableBox>
 
-            <LiveResizableBox boxKey="home.news.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.news.box')} isAdmin={isAdmin} lockHorizontal className="w-full" applySavedHeight={false}>
-              <section style={getSectionSpacingStyles(layoutSettings)}>
+            <SectionDivider settings={layoutSettings} />
+
+            <LiveResizableBox boxKey="home.news.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.news.box')} isAdmin={isAdmin} lockHorizontal allowPosition={false} className="w-full" applySavedHeight={false}>
+              <section>
                 <div className="mb-8 max-w-3xl">
                   <p className="text-xs font-black uppercase tracking-[0.28em] text-[color:var(--color-accent-soft)]">Aktuelles</p>
                   <h2 className="section-title mt-3 text-white" style={getSectionTitleStyles(layoutSettings)}>{home.newsSectionTitle}</h2>
@@ -632,8 +647,10 @@ export default async function HomePage({
               </section>
             </LiveResizableBox>
 
-            <LiveResizableBox boxKey="home.membership.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.membership.box')} isAdmin={isAdmin} lockHorizontal className="w-full">
-              <section style={getSectionSpacingStyles(layoutSettings)}>
+            <SectionDivider settings={layoutSettings} />
+
+            <LiveResizableBox boxKey="home.membership.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.membership.box')} isAdmin={isAdmin} lockHorizontal allowPosition={false} className="w-full">
+              <section>
                 <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(24,15,11,0.94)_0%,rgba(10,7,5,0.9)_100%)] shadow-[0_28px_70px_rgba(0,0,0,0.24)]">
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr]" style={{ minHeight: `${layoutSettings.membershipMinHeight}px` }}>
                     <div className="flex items-center px-6 py-8 sm:px-8 lg:px-10">
