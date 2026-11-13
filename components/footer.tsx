@@ -60,6 +60,11 @@ function buildVisibleSocialLinks(content: FooterContent, resolvedContactEmail: s
   return links;
 }
 
+// Live-Editor-HTML wie '<br>' oder '<p>&nbsp;</p>' gilt als leer.
+function hasVisibleText(html: string) {
+  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;| /gi, ' ').trim().length > 0;
+}
+
 function buildEditorFooterLinks(links: FooterLink[] | undefined, length: number) {
   return Array.from({ length }, (_, index) => links?.[index] || { id: '', label: '', href: '' });
 }
@@ -83,13 +88,15 @@ export function Footer({
   const informationLinks = content.informationLinks || [];
   const footerContactLinks = content.contactLinks || [];
   const visibleSocialLinks = buildVisibleSocialLinks(content, resolvedContactEmail);
+  const descriptionHtml = resolveLiveHtml(liveEditor, 'footer.description', content.description || '');
   const editorInformationLinks = buildEditorFooterLinks(informationLinks, 4);
   const editorContactLinks = buildEditorFooterLinks(footerContactLinks, 2);
 
   return (
     <footer className="relative mt-6 border-t border-[color:var(--color-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-background)_88%,black)_0%,var(--color-background)_100%)] sm:mt-8">
       <div className="fire-divider" />
-      <div className="site-shell w-full px-4 py-14 text-center sm:px-6">
+      {/* Seitliches Padding wie der Hauptinhalt der Startseite (px-4 sm:px-6 lg:px-8), damit die Kanten bündig sind. */}
+      <div className="site-shell w-full px-4 py-14 text-center sm:px-6 lg:px-8">
         {isAdmin ? (
           <section className="mb-8 rounded-[1.4rem] border border-[#ff9d3c]/30 bg-[#130d09]/92 p-5 text-left shadow-[0_20px_50px_rgba(0,0,0,0.25)] backdrop-blur-sm">
             <div className="mb-4">
@@ -163,53 +170,71 @@ export function Footer({
           </section>
         ) : null}
 
-        <div className="grid gap-6 text-left lg:grid-cols-[1.05fr_0.9fr_0.75fr] lg:items-start">
-          <LiveResizableBox
-            boxKey="footer.top.brand.box"
-            initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.top.brand.box')}
-            isAdmin={isAdmin}
-            className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,14,10,0.92)_0%,rgba(10,7,5,0.85)_100%)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.22)]"
-          >
-            <div className="flex items-center gap-4">
-              <img src={resolvedLogoSrc} alt="Headbang Handwerk Logo" className="h-20 w-24 object-contain drop-shadow-[0_8px_18px_rgba(0,0,0,0.65)] sm:h-24 sm:w-28" />
-              <div className="section-title text-left text-[1.45rem] leading-[0.95] sm:text-[1.8rem] xl:text-[2.05rem]">
-                <LiveEditableText as="div" className="block" editorKey="footer.brandHeadline" initialHtml={resolveLiveHtml(liveEditor, 'footer.brandHeadline', content.brandHeadline)} isAdmin={isAdmin} title="Footer Überschrift" />
-                <LiveEditableText as="div" className="block" editorKey="footer.brandHighlight" initialHtml={resolveLiveHtml(liveEditor, 'footer.brandHighlight', content.brandHighlight)} isAdmin={isAdmin} title="Footer Hervorhebung" />
-              </div>
-            </div>
-            <LiveEditableText
-              as="div"
-              className="body-copy mt-5 max-w-2xl"
-              editorKey="footer.description"
-              initialHtml={resolveLiveHtml(liveEditor, 'footer.description', content.description || '')}
+        {/* Drei Spalten erst ab xl: darunter passen Marke, Informationen und Kontakt nicht ohne abgeschnittene
+            oder mitten im Wort umbrechende Texte nebeneinander. Auf lg steht die Marke über die volle Breite.
+            Ab xl sind Informationen und Kontakt so breit wie ihr Inhalt, die Marken-Box bekommt den Rest. */}
+        <div className="grid gap-6 text-left lg:grid-cols-2 lg:items-start xl:grid-cols-[1fr_auto_auto]">
+          <div className="lg:col-span-2 xl:col-span-1">
+            <LiveResizableBox
+              boxKey="footer.top.brand.box"
+              initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.top.brand.box')}
               isAdmin={isAdmin}
-              title="Footer Beschreibung"
-              normalizeTypography
-            />
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              {visibleSocialLinks.map((link) => {
-                const Icon = icons[link.platform];
+              lockHorizontal
+              growWithContent
+              className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,14,10,0.92)_0%,rgba(10,7,5,0.85)_100%)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.22)]"
+            >
+              {/* Links eine feste Spalte: Logo, darunter die Social-Icons (zwei passen nebeneinander, weitere
+                  brechen um, damit der Titel nicht schmaler wird). Rechts mit Abstand Titel und Unterzeile. */}
+              <div className="flex items-start gap-4 sm:gap-6">
+                <div className="flex w-[6.25rem] shrink-0 flex-col gap-4 sm:w-28">
+                  <img src={resolvedLogoSrc} alt="Headbang Handwerk Logo" className="h-20 w-full object-contain object-left drop-shadow-[0_8px_18px_rgba(0,0,0,0.65)] sm:h-24" />
+                  {visibleSocialLinks.length ? (
+                    <div className="flex flex-wrap gap-3">
+                      {visibleSocialLinks.map((link) => {
+                        const Icon = icons[link.platform];
 
-                return (
-                  <a
-                    key={`${link.platform}-${link.label}`}
-                    href={link.href}
-                    aria-label={link.label}
-                    target={isExternalUrl(link.href) && !link.href.startsWith('mailto:') ? '_blank' : undefined}
-                    rel={isExternalUrl(link.href) && !link.href.startsWith('mailto:') ? 'noreferrer noopener' : undefined}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface-2)_92%,black)_0%,color-mix(in_srgb,var(--color-surface)_76%,black)_100%)] text-[color:var(--text-link)] ring-1 ring-[color:var(--color-border)] transition-all hover:ring-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-background)]"
-                  >
-                    <Icon className="h-5 w-5" />
-                  </a>
-                );
-              })}
-            </div>
-          </LiveResizableBox>
+                        return (
+                          <a
+                            key={`${link.platform}-${link.label}`}
+                            href={link.href}
+                            aria-label={link.label}
+                            target={isExternalUrl(link.href) && !link.href.startsWith('mailto:') ? '_blank' : undefined}
+                            rel={isExternalUrl(link.href) && !link.href.startsWith('mailto:') ? 'noreferrer noopener' : undefined}
+                            className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface-2)_92%,black)_0%,color-mix(in_srgb,var(--color-surface)_76%,black)_100%)] text-[color:var(--text-link)] ring-1 ring-[color:var(--color-border)] transition-all hover:ring-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-background)]"
+                          >
+                            <Icon className="h-5 w-5" />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+                {/* Bewusst ohne .section-title: Die Klasse steht in globals.css ohne Layer und überschreibt
+                    font-size/line-height-Utilities – die Größen hier würden sonst nicht greifen. */}
+                <div className="min-w-0 flex-1 break-words hyphens-auto text-left font-[family-name:var(--font-cinzel)] font-black text-[color:var(--text-heading)]">
+                  <LiveEditableText as="div" className="block text-[1.35rem] leading-[1.05] sm:text-[1.8rem]" editorKey="footer.brandHeadline" initialHtml={resolveLiveHtml(liveEditor, 'footer.brandHeadline', content.brandHeadline)} isAdmin={isAdmin} title="Footer Überschrift" />
+                  <LiveEditableText as="div" className="mt-3 block text-sm leading-snug" editorKey="footer.brandHighlight" initialHtml={resolveLiveHtml(liveEditor, 'footer.brandHighlight', content.brandHighlight)} isAdmin={isAdmin} title="Footer Hervorhebung" />
+                </div>
+              </div>
+              {isAdmin || hasVisibleText(descriptionHtml) ? (
+                <LiveEditableText
+                  as="div"
+                  className="body-copy mt-5 max-w-2xl"
+                  editorKey="footer.description"
+                  initialHtml={descriptionHtml}
+                  isAdmin={isAdmin}
+                  title="Footer Beschreibung"
+                  normalizeTypography
+                />
+              ) : null}
+            </LiveResizableBox>
+          </div>
 
           <LiveResizableBox
             boxKey="footer.top.information.box"
             initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.top.information.box')}
             isAdmin={isAdmin}
+            lockHorizontal
             className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,14,10,0.92)_0%,rgba(10,7,5,0.85)_100%)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.22)]"
           >
             <h2 className="section-title break-words text-left text-[1.05rem] leading-[0.98] sm:text-[1.25rem] xl:text-[1.4rem]">{content.informationHeading}</h2>
@@ -226,6 +251,7 @@ export function Footer({
             boxKey="footer.top.contact.box"
             initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.top.contact.box')}
             isAdmin={isAdmin}
+            lockHorizontal
             className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,14,10,0.92)_0%,rgba(10,7,5,0.85)_100%)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.22)]"
           >
             <h2 className="section-title break-words text-left text-[1.05rem] leading-[0.98] sm:text-[1.25rem] xl:text-[1.4rem]">{content.contactHeading}</h2>
@@ -249,7 +275,8 @@ export function Footer({
             boxKey="footer.legal.box"
             initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.legal.box')}
             isAdmin={isAdmin}
-            className="w-full max-w-4xl"
+            lockHorizontal
+            className="w-full"
           >
             <div className="body-copy flex w-full flex-wrap items-center justify-center gap-x-5 gap-y-3 border-t border-[color:var(--color-border)] pt-5 text-center text-sm">
               <p>

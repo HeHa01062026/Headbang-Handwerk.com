@@ -124,30 +124,50 @@ function AdminPanel({ title, description, children }: { title: string; descripti
   );
 }
 
-function HomeEventPreviewCard({ event, imageHeight }: { event: Awaited<ReturnType<typeof getCmsContent>>['site']['events'][number]; imageHeight: number }) {
+function HomeEventPreviewCard({
+  event,
+  imageHeight,
+  alignInGrid = false,
+}: {
+  event: Awaited<ReturnType<typeof getCmsContent>>['site']['events'][number];
+  imageHeight: number;
+  alignInGrid?: boolean;
+}) {
   const ctaHref = resolveHomeEventCtaHref(event.ctaUrl);
   const ctaLabel = event.ctaText?.trim() || 'Zur Veranstaltungsübersicht';
   const statusLabel = event.status === 'planned' ? 'Geplant' : event.status === 'confirmed' ? 'Bestätigt' : null;
 
+  // alignInGrid: Die Karte belegt sechs Zeilen des umgebenden Grids und übernimmt sie per Subgrid
+  // (Bild, Status, Titel, Datum/Ort, Beschreibung, Button). So stehen Datum/Ort und Buttons
+  // kartenübergreifend auf gleicher Höhe. Die Anzahl der direkten Kinder muss zu row-span-6
+  // passen – deshalb bleibt die Statuszeile auch ohne Status als leerer Platzhalter stehen.
+  // grid-cols-1 (= minmax(0, 1fr)) verhindert, dass ein langes Titelwort die Kartenspalte verbreitert.
+  // Nur setzen, wenn das Elternelement ein Grid ist: In Chrome lässt grid-rows-subgrid ohne
+  // Eltern-Grid den Bildrahmen (overflow-hidden) auf 1px zusammenfallen.
   return (
-    <article className="group overflow-hidden rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(23,15,11,0.94)_0%,rgba(10,7,5,0.9)_100%)] shadow-[0_20px_50px_rgba(0,0,0,0.24)]">
+    <article
+      className={cn(
+        'group overflow-hidden rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(23,15,11,0.94)_0%,rgba(10,7,5,0.9)_100%)] shadow-[0_20px_50px_rgba(0,0,0,0.24)]',
+        alignInGrid && 'row-span-6 grid grid-cols-1 grid-rows-subgrid gap-y-0'
+      )}
+    >
       <div className="overflow-hidden border-b border-white/10 bg-black/30">
         <img src={event.imageUrl || EVENT_IMAGE_FALLBACK_SRC} alt={event.imageAlt || event.title} className="w-full object-cover transition duration-300 group-hover:scale-[1.02]" style={{ height: `${imageHeight}px` }} />
       </div>
-      <div className="p-6">
+      <div className="px-6 pt-6">
         {statusLabel ? <span className="inline-flex rounded-full border border-[color:var(--color-accent)]/40 bg-[color:var(--color-accent)]/10 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--color-accent-soft)]">{statusLabel}</span> : null}
-        <h3 className="section-title mt-4 text-[1.55rem] leading-[0.98] text-white">{event.title}</h3>
-        <div className="mt-4 space-y-2 text-sm text-[#e7d7c5]">
-          <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[color:var(--color-accent)]" />{event.date}</p>
-          <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-[color:var(--color-accent)]" />{event.location}</p>
-        </div>
-        <p className="body-copy mt-4 text-[#e7d7c5]">{event.description}</p>
-        <div className="mt-6">
-          <Button href={ctaHref} variant="secondary" className="w-full justify-center" target={isExternalUrl(ctaHref) ? '_blank' : undefined} rel={isExternalUrl(ctaHref) ? 'noreferrer noopener' : undefined}>
-            {ctaLabel}
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
+      </div>
+      <h3 className="section-title mt-4 px-6 text-[1.55rem] leading-[0.98] text-white">{event.title}</h3>
+      <div className="mt-4 space-y-2 px-6 text-sm text-[#e7d7c5]">
+        <p className="flex items-center gap-2"><CalendarDays className="h-4 w-4 text-[color:var(--color-accent)]" />{event.date}</p>
+        <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-[color:var(--color-accent)]" />{event.location}</p>
+      </div>
+      <p className="body-copy mt-4 px-6 text-[#e7d7c5]">{event.description}</p>
+      <div className="mt-6 px-6 pb-6">
+        <Button href={ctaHref} variant="secondary" className="w-full justify-center" target={isExternalUrl(ctaHref) ? '_blank' : undefined} rel={isExternalUrl(ctaHref) ? 'noreferrer noopener' : undefined}>
+          {ctaLabel}
+          <ArrowRight className="h-4 w-4" />
+        </Button>
       </div>
     </article>
   );
@@ -222,7 +242,8 @@ export default async function HomePage({
         >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_12%,rgba(255,143,42,0.18)_0%,transparent_30%),linear-gradient(180deg,rgba(6,3,2,0.15)_0%,rgba(6,3,2,0.82)_100%)]" />
 
-          <div className="site-shell relative z-10 px-4 pb-14 pt-28 sm:px-6 lg:px-8 lg:pt-32">
+          {/* Die Navigation ist sticky und nimmt ihren Platz selbst ein – hier nur noch ein kleiner Abstand. */}
+          <div className="site-shell relative z-10 px-4 pb-14 pt-6 sm:px-6 lg:px-8 lg:pt-8">
             {savedMessage ? <p className="mb-6 rounded-2xl border border-green-500/30 bg-green-950/40 px-5 py-4 text-sm font-semibold text-green-200">{savedMessage}</p> : null}
             {params?.homeError ? <p className="mb-6 rounded-2xl border border-red-500/30 bg-red-950/40 px-5 py-4 text-sm font-semibold text-red-200">{params.homeError}</p> : null}
 
@@ -536,7 +557,9 @@ export default async function HomePage({
               </div>
             ) : null}
 
-            <LiveResizableBox boxKey="home.hero.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.hero.box')} isAdmin={isAdmin} className="w-full">
+            {/* growWithContent: gespeicherte Höhe gilt als Mindesthöhe, bei mehr Inhalt wächst die Box statt zu scrollen.
+                lockHorizontal (auch bei den folgenden Bereichen): volle Spaltenbreite, damit alle Bereiche bündig stehen. */}
+            <LiveResizableBox boxKey="home.hero.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.hero.box')} isAdmin={isAdmin} growWithContent lockHorizontal className="w-full">
               <section className="relative overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_28px_70px_rgba(0,0,0,0.28)]" style={getHeroStyles(layoutSettings)}>
                 <img src={heroImageSrc} alt={home.heroImageAlt || home.heroTitle} className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: `${home.heroImagePositionX}% ${home.heroImagePositionY}%` }} />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,4,2,0.92)_0%,rgba(7,4,2,0.76)_44%,rgba(7,4,2,0.48)_100%)]" />
@@ -556,7 +579,7 @@ export default async function HomePage({
               </section>
             </LiveResizableBox>
 
-            <LiveResizableBox boxKey="home.events.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.events.box')} isAdmin={isAdmin} className="w-full" applySavedHeight={false}>
+            <LiveResizableBox boxKey="home.events.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.events.box')} isAdmin={isAdmin} lockHorizontal className="w-full" applySavedHeight={false}>
               <section style={getSectionSpacingStyles(layoutSettings)}>
                 <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div className="max-w-3xl">
@@ -573,7 +596,7 @@ export default async function HomePage({
                         {nextMobileEvent.map((event) => <HomeEventPreviewCard key={event.id} event={event} imageHeight={layoutSettings.eventImageHeight} />)}
                       </div>
                       <div className={cn('hidden', getDesktopPreviewGridClasses(upcomingEvents.length))} style={{ gap: `${layoutSettings.cardGap}px` }}>
-                        {upcomingEvents.map((event) => <HomeEventPreviewCard key={event.id} event={event} imageHeight={layoutSettings.eventImageHeight} />)}
+                        {upcomingEvents.map((event) => <HomeEventPreviewCard key={event.id} event={event} imageHeight={layoutSettings.eventImageHeight} alignInGrid />)}
                       </div>
                     </>
                   ) : (
@@ -590,7 +613,7 @@ export default async function HomePage({
               </section>
             </LiveResizableBox>
 
-            <LiveResizableBox boxKey="home.news.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.news.box')} isAdmin={isAdmin} className="w-full" applySavedHeight={false}>
+            <LiveResizableBox boxKey="home.news.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.news.box')} isAdmin={isAdmin} lockHorizontal className="w-full" applySavedHeight={false}>
               <section style={getSectionSpacingStyles(layoutSettings)}>
                 <div className="mb-8 max-w-3xl">
                   <p className="text-xs font-black uppercase tracking-[0.28em] text-[color:var(--color-accent-soft)]">Aktuelles</p>
@@ -609,7 +632,7 @@ export default async function HomePage({
               </section>
             </LiveResizableBox>
 
-            <LiveResizableBox boxKey="home.membership.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.membership.box')} isAdmin={isAdmin} className="w-full">
+            <LiveResizableBox boxKey="home.membership.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.membership.box')} isAdmin={isAdmin} lockHorizontal className="w-full">
               <section style={getSectionSpacingStyles(layoutSettings)}>
                 <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(24,15,11,0.94)_0%,rgba(10,7,5,0.9)_100%)] shadow-[0_28px_70px_rgba(0,0,0,0.24)]">
                   <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr]" style={{ minHeight: `${layoutSettings.membershipMinHeight}px` }}>
