@@ -18,7 +18,7 @@ export default async function MerchandiseCheckoutPage({
     <>
       <SiteNavigation links={cms.site.navigationLinks} ctaLabel={cms.site.navigationCtaLabel} ctaHref={cms.site.navigationCtaHref} />
       <MerchandiseCheckoutClient products={cms.site.merchandise.products} />
-      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} logoSrc={cms.site.logo.assetUrl} contactEmail={cms.site.contact.email} />
+      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
     </>
   );
 }

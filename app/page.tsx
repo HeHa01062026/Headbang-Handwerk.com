@@ -175,6 +175,8 @@ function HomeEventPreviewCard({
       <div className="mt-6 px-6 pb-6">
         <Button href={ctaHref} variant="secondary" className="w-full justify-center" target={isExternalUrl(ctaHref) ? '_blank' : undefined} rel={isExternalUrl(ctaHref) ? 'noreferrer noopener' : undefined}>
           {ctaLabel}
+          {/* Mehrere Karten haben denselben Buttontext – für Screenreader eindeutig machen. */}
+          <span className="sr-only">: {event.title}{isExternalUrl(ctaHref) ? ' (öffnet in neuem Tab)' : ''}</span>
           <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
@@ -575,8 +577,7 @@ export default async function HomePage({
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,136,36,0.18)_0%,transparent_28%)]" />
                 <div className="relative z-10 flex h-full items-end justify-center px-6 py-8 sm:px-8 lg:px-12 lg:py-12">
                   <div className="max-w-3xl text-center">
-                    <p className="text-xs font-black uppercase tracking-[0.28em] text-[color:var(--color-accent-soft)]">Headbang Handwerk</p>
-                    <h1 className="section-title mt-4 max-w-4xl text-white drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]" style={getHeroTitleStyles(layoutSettings)}>{home.heroTitle}</h1>
+                    <h1 className="section-title max-w-4xl text-white drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]" style={getHeroTitleStyles(layoutSettings)}>{home.heroTitle}</h1>
                     <p className="mt-5 text-xl font-semibold text-[#f3e6d7] sm:text-2xl">{home.heroSubtitle}</p>
                     {home.heroDescription ? <p className="body-copy mt-5 max-w-2xl whitespace-pre-line text-[#f0dfcd] sm:mx-auto">{home.heroDescription}</p> : null}
                     <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
@@ -594,13 +595,11 @@ export default async function HomePage({
 
             <LiveResizableBox boxKey="home.events.box" initialStyle={resolveLiveBoxStyle(liveEditor, 'home.events.box')} isAdmin={isAdmin} lockHorizontal allowPosition={false} className="w-full" applySavedHeight={false}>
               <section>
-                <div className="mb-8 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="max-w-3xl">
-                    <p className="text-xs font-black uppercase tracking-[0.28em] text-[color:var(--color-accent-soft)]">Live aus dem CMS</p>
-                    <h2 className="section-title mt-3 text-white" style={getSectionTitleStyles(layoutSettings)}>{home.eventsSectionTitle}</h2>
-                    {home.eventsSectionIntro ? <p className="body-copy mt-4 whitespace-pre-line text-[#ecdbca]">{home.eventsSectionIntro}</p> : null}
-                  </div>
-                  <Button href="/veranstaltungen" variant="secondary">{home.eventsSectionCtaLabel}</Button>
+                {/* Der Link zur Übersicht steht nur einmal, unter den Karten. */}
+                <div className="mb-8 max-w-3xl">
+                  <p className="text-xs font-black uppercase tracking-[0.28em] text-[color:var(--color-accent-soft)]">Termine</p>
+                  <h2 className="section-title mt-3 text-white" style={getSectionTitleStyles(layoutSettings)}>{home.eventsSectionTitle}</h2>
+                  {home.eventsSectionIntro ? <p className="body-copy mt-4 whitespace-pre-line text-[#ecdbca]">{home.eventsSectionIntro}</p> : null}
                 </div>
                 <div className="flex flex-col gap-10 sm:gap-12">
                   {upcomingEvents.length ? (
@@ -679,7 +678,7 @@ export default async function HomePage({
             </LiveResizableBox>
           </div>
         </main>
-        <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} logoSrc={cms.site.logo.assetUrl} contactEmail={cms.site.contact.email} />
+        <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
       </LiveLayoutSaveProvider>
     </>
   );

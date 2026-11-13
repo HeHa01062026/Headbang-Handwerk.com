@@ -41,7 +41,7 @@ export default async function DankePage({
           </div>
         </div>
       </main>
-      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} logoSrc={cms.site.logo.assetUrl} contactEmail={cms.site.contact.email} />
+      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
     </>
   );
 }

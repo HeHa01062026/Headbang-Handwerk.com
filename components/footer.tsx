@@ -1,8 +1,7 @@
 import type { ComponentType, SVGProps } from 'react';
-import { Facebook, Instagram, Mail } from 'lucide-react';
-import headbangLogo from '../Headbang Handwerk e.V. Logo Final PNG.png';
+import { Facebook, Form as FormIcon, Instagram, Mail } from 'lucide-react';
 import { updateFooterAction } from '@/app/admin/chrome-actions';
-import type { FooterContent, FooterLink, LiveEditorContent } from '@/lib/cms/schema';
+import type { FooterContent, LiveEditorContent } from '@/lib/cms/schema';
 import { resolveLiveHtml, resolveLiveBoxStyle } from '@/lib/cms/live-editor';
 import { isExternalUrl, normalizeSafeSocialUrl } from '@/lib/site';
 import { LiveEditableText } from './live-editable-text';
@@ -16,23 +15,43 @@ function TikTokIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-type FooterSocialPlatform = 'facebook' | 'instagram' | 'tiktok' | 'email';
+type FooterSocialPlatform = 'facebook' | 'instagram' | 'tiktok';
 
-interface VisibleFooterSocialLink {
-  platform: FooterSocialPlatform;
-  label: string;
+interface FooterContactRow {
+  key: string;
+  Icon: ComponentType<SVGProps<SVGSVGElement>>;
+  text: string;
   href: string;
+  /** Nur für Screenreader vorangestellt, z. B. „Instagram:“ vor dem Profilnamen. */
+  srPrefix?: string;
 }
 
-const icons: Record<FooterSocialPlatform, ComponentType<SVGProps<SVGSVGElement>>> = {
+const socialIcons: Record<FooterSocialPlatform, ComponentType<SVGProps<SVGSVGElement>>> = {
   facebook: Facebook,
   instagram: Instagram,
   tiktok: TikTokIcon,
-  email: Mail,
 };
 
-function buildVisibleSocialLinks(content: FooterContent, resolvedContactEmail: string) {
-  const links: VisibleFooterSocialLink[] = [];
+// Anzeigename aus der Profil-URL, z. B. https://www.instagram.com/headbang.handwerk/ -> @headbang.handwerk.
+// Passt der erste Pfadteil nicht zu einem Profilnamen (etwa facebook.com/profile.php?id=…), bleibt das Label.
+function getSocialProfileName(platform: FooterSocialPlatform, href: string, fallback: string) {
+  try {
+    const segment = decodeURIComponent(new URL(href).pathname.split('/').filter(Boolean)[0] || '');
+
+    if (!/^@?[\w.-]+$/.test(segment) || segment.endsWith('.php')) {
+      return fallback;
+    }
+
+    const name = segment.replace(/^@/, '');
+    return platform === 'facebook' ? name : `@${name}`;
+  } catch {
+    return fallback;
+  }
+}
+
+// Zeilen im Kontaktbereich, in dieser Reihenfolge: Social-Profile, E-Mail, Kontaktformular.
+function buildFooterContactRows(content: FooterContent, resolvedContactEmail: string) {
+  const rows: FooterContactRow[] = [];
 
   for (const platform of ['facebook', 'instagram', 'tiktok'] as const) {
     const socialLink = content.socialLinks.find((link) => link.platform === platform);
@@ -42,55 +61,39 @@ function buildVisibleSocialLinks(content: FooterContent, resolvedContactEmail: s
       continue;
     }
 
-    links.push({
-      platform,
-      label: socialLink.label,
+    rows.push({
+      key: platform,
+      Icon: socialIcons[platform],
+      text: getSocialProfileName(platform, href, socialLink.label),
       href,
+      srPrefix: `${socialLink.label}: `,
     });
   }
 
   if (resolvedContactEmail) {
-    links.push({
-      platform: 'email',
-      label: 'E-Mail',
-      href: `mailto:${resolvedContactEmail}`,
-    });
+    rows.push({ key: 'email', Icon: Mail, text: resolvedContactEmail, href: `mailto:${resolvedContactEmail}`, srPrefix: 'E-Mail: ' });
   }
 
-  return links;
-}
+  rows.push({ key: 'form', Icon: FormIcon, text: 'Nachricht senden', href: '/kontakt' });
 
-// Live-Editor-HTML wie '<br>' oder '<p>&nbsp;</p>' gilt als leer.
-function hasVisibleText(html: string) {
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;|&#160;| /gi, ' ').trim().length > 0;
-}
-
-function buildEditorFooterLinks(links: FooterLink[] | undefined, length: number) {
-  return Array.from({ length }, (_, index) => links?.[index] || { id: '', label: '', href: '' });
+  return rows;
 }
 
 export function Footer({
   content,
   isAdmin = false,
   liveEditor,
-  logoSrc,
   contactEmail,
 }: {
   content: FooterContent;
   isAdmin?: boolean;
   liveEditor?: LiveEditorContent;
-  logoSrc?: string;
   contactEmail?: string;
 }) {
   const year = new Date().getFullYear();
-  const resolvedLogoSrc = logoSrc || headbangLogo.src;
   const resolvedContactEmail = (content.contactEmail || contactEmail || '').trim();
-  const informationLinks = content.informationLinks || [];
-  const footerContactLinks = content.contactLinks || [];
-  const visibleSocialLinks = buildVisibleSocialLinks(content, resolvedContactEmail);
-  const descriptionHtml = resolveLiveHtml(liveEditor, 'footer.description', content.description || '');
-  const editorInformationLinks = buildEditorFooterLinks(informationLinks, 4);
-  const editorContactLinks = buildEditorFooterLinks(footerContactLinks, 2);
+  const contactHeading = content.contactHeading?.trim() || 'Kontakt';
+  const contactRows = buildFooterContactRows(content, resolvedContactEmail);
 
   return (
     <footer className="relative mt-6 border-t border-[color:var(--color-border)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-background)_88%,black)_0%,var(--color-background)_100%)] sm:mt-8">
@@ -101,14 +104,11 @@ export function Footer({
           <section className="mb-8 rounded-[1.4rem] border border-[#ff9d3c]/30 bg-[#130d09]/92 p-5 text-left shadow-[0_20px_50px_rgba(0,0,0,0.25)] backdrop-blur-sm">
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#ffcf98]">Footer</p>
-              <p className="mt-1 text-sm text-[#f3dec4]">Beschreibung, Social Links, Informationen und Kontakt für alle öffentlichen Seiten pflegen.</p>
+              <p className="mt-1 text-sm text-[#f3dec4]">Social Links und Kontakt für alle öffentlichen Seiten pflegen. Der Link „Nachricht senden“ führt fest auf die Kontaktseite.</p>
             </div>
+            {/* Beschreibung, Informationen und Kontaktlinks werden im Footer nicht mehr angezeigt und sind deshalb
+                nicht mehr im Formular. updateFooterAction behält bei fehlenden Feldern die gespeicherten Werte. */}
             <form action={updateFooterAction} className="grid gap-4">
-              <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-white">Beschreibung</span>
-                <textarea name="footerDescription" defaultValue={content.description || ''} rows={4} className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
-              </label>
-
               <div className="grid gap-4 lg:grid-cols-3">
                 <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-white">Facebook URL</span>
@@ -126,41 +126,13 @@ export function Footer({
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-semibold text-white">Überschrift Informationen</span>
-                  <input name="footerInformationHeading" defaultValue={content.informationHeading || 'Informationen'} className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
-                </label>
-                <label className="block">
                   <span className="mb-2 block text-sm font-semibold text-white">Überschrift Kontakt</span>
                   <input name="footerContactHeading" defaultValue={content.contactHeading || 'Kontakt'} className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
                 </label>
-              </div>
-
-              <div className="grid gap-4 xl:grid-cols-2">
-                <div className="rounded-[1rem] border border-white/10 bg-black/15 p-4">
-                  <p className="mb-3 text-sm font-semibold text-white">Informationslinks</p>
-                  {editorInformationLinks.map((link, index) => (
-                    <div key={`${link.id || 'info'}-${index}`} className="mb-3 grid gap-3 md:grid-cols-2">
-                      <input type="hidden" name={`footerInformationId:${index}`} value={link.id || ''} />
-                      <input name={`footerInformationLabel:${index}`} defaultValue={link.label} className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
-                      <input name={`footerInformationHref:${index}`} defaultValue={link.href} className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="rounded-[1rem] border border-white/10 bg-black/15 p-4">
-                  <p className="mb-3 text-sm font-semibold text-white">Kontaktlinks und E-Mail</p>
-                  {editorContactLinks.map((link, index) => (
-                    <div key={`${link.id || 'contact'}-${index}`} className="mb-3 grid gap-3 md:grid-cols-2">
-                      <input type="hidden" name={`footerContactId:${index}`} value={link.id || ''} />
-                      <input name={`footerContactLabel:${index}`} defaultValue={link.label} placeholder="Linktext" className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
-                      <input name={`footerContactHref:${index}`} defaultValue={link.href} placeholder="/kontakt" className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
-                    </div>
-                  ))}
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-semibold text-white">Footer E-Mail optional</span>
-                    <input name="footerContactEmail" defaultValue={content.contactEmail || resolvedContactEmail} placeholder={resolvedContactEmail || 'name@beispiel.de'} className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
-                  </label>
-                </div>
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold text-white">Footer E-Mail optional</span>
+                  <input name="footerContactEmail" defaultValue={content.contactEmail || resolvedContactEmail} placeholder={resolvedContactEmail || 'name@beispiel.de'} className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white outline-none focus:border-[color:var(--color-accent)]" />
+                </label>
               </div>
 
               <div className="flex justify-end">
@@ -170,105 +142,44 @@ export function Footer({
           </section>
         ) : null}
 
-        {/* Drei Spalten erst ab xl: darunter passen Marke, Informationen und Kontakt nicht ohne abgeschnittene
-            oder mitten im Wort umbrechende Texte nebeneinander. Auf lg steht die Marke über die volle Breite.
-            Ab xl sind Informationen und Kontakt so breit wie ihr Inhalt, die Marken-Box bekommt den Rest. */}
-        <div className="grid gap-6 text-left lg:grid-cols-2 lg:items-start xl:grid-cols-[1fr_auto_auto]">
-          <div className="lg:col-span-2 xl:col-span-1">
-            <LiveResizableBox
-              boxKey="footer.top.brand.box"
-              initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.top.brand.box')}
-              isAdmin={isAdmin}
-              lockHorizontal
-              growWithContent
-              className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,14,10,0.92)_0%,rgba(10,7,5,0.85)_100%)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.22)]"
-            >
-              {/* Links eine feste Spalte: Logo, darunter die Social-Icons (zwei passen nebeneinander, weitere
-                  brechen um, damit der Titel nicht schmaler wird). Rechts mit Abstand Titel und Unterzeile. */}
-              <div className="flex items-start gap-4 sm:gap-6">
-                <div className="flex w-[6.25rem] shrink-0 flex-col gap-4 sm:w-28">
-                  <img src={resolvedLogoSrc} alt="Headbang Handwerk Logo" className="h-20 w-full object-contain object-left drop-shadow-[0_8px_18px_rgba(0,0,0,0.65)] sm:h-24" />
-                  {visibleSocialLinks.length ? (
-                    <div className="flex flex-wrap gap-3">
-                      {visibleSocialLinks.map((link) => {
-                        const Icon = icons[link.platform];
+        {/* Kontaktbereich: Überschrift „Kontakt“, darunter je eine Zeile aus Icon und Text (beides ein Link):
+            Social-Profile, E-Mail, Kontaktformular. Kein Logo – das steht schon in der Navigation. */}
+        <LiveResizableBox
+          boxKey="footer.top.brand.box"
+          initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.top.brand.box')}
+          isAdmin={isAdmin}
+          lockHorizontal
+          growWithContent
+          className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,14,10,0.92)_0%,rgba(10,7,5,0.85)_100%)] p-6 text-left shadow-[0_18px_40px_rgba(0,0,0,0.22)]"
+        >
+          <h2 className="text-[1.35rem] font-black leading-[1.05] sm:text-[1.8rem]">{contactHeading}</h2>
+          <ul className="mt-5 flex flex-col gap-3">
+            {contactRows.map((row) => {
+              const opensNewTab = isExternalUrl(row.href) && !row.href.startsWith('mailto:');
 
-                        return (
-                          <a
-                            key={`${link.platform}-${link.label}`}
-                            href={link.href}
-                            aria-label={link.label}
-                            target={isExternalUrl(link.href) && !link.href.startsWith('mailto:') ? '_blank' : undefined}
-                            rel={isExternalUrl(link.href) && !link.href.startsWith('mailto:') ? 'noreferrer noopener' : undefined}
-                            className="flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface-2)_92%,black)_0%,color-mix(in_srgb,var(--color-surface)_76%,black)_100%)] text-[color:var(--text-link)] ring-1 ring-[color:var(--color-border)] transition-all hover:ring-[color:var(--color-accent)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-background)]"
-                          >
-                            <Icon className="h-5 w-5" />
-                          </a>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-                {/* Bewusst ohne .section-title: Die Klasse steht in globals.css ohne Layer und überschreibt
-                    font-size/line-height-Utilities – die Größen hier würden sonst nicht greifen. */}
-                <div className="min-w-0 flex-1 break-words hyphens-auto text-left font-[family-name:var(--font-cinzel)] font-black text-[color:var(--text-heading)]">
-                  <LiveEditableText as="div" className="block text-[1.35rem] leading-[1.05] sm:text-[1.8rem]" editorKey="footer.brandHeadline" initialHtml={resolveLiveHtml(liveEditor, 'footer.brandHeadline', content.brandHeadline)} isAdmin={isAdmin} title="Footer Überschrift" />
-                  <LiveEditableText as="div" className="mt-3 block text-sm leading-snug" editorKey="footer.brandHighlight" initialHtml={resolveLiveHtml(liveEditor, 'footer.brandHighlight', content.brandHighlight)} isAdmin={isAdmin} title="Footer Hervorhebung" />
-                </div>
-              </div>
-              {isAdmin || hasVisibleText(descriptionHtml) ? (
-                <LiveEditableText
-                  as="div"
-                  className="body-copy mt-5 max-w-2xl"
-                  editorKey="footer.description"
-                  initialHtml={descriptionHtml}
-                  isAdmin={isAdmin}
-                  title="Footer Beschreibung"
-                  normalizeTypography
-                />
-              ) : null}
-            </LiveResizableBox>
-          </div>
-
-          <LiveResizableBox
-            boxKey="footer.top.information.box"
-            initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.top.information.box')}
-            isAdmin={isAdmin}
-            lockHorizontal
-            className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,14,10,0.92)_0%,rgba(10,7,5,0.85)_100%)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.22)]"
-          >
-            <h2 className="section-title break-words text-left text-[1.05rem] leading-[0.98] sm:text-[1.25rem] xl:text-[1.4rem]">{content.informationHeading}</h2>
-            <div className="mt-5 flex flex-col gap-3">
-              {informationLinks.map((link) => (
-                <a key={`${link.id || link.href}-${link.label}`} href={link.href} className="link-copy text-sm font-semibold transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-background)]">
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </LiveResizableBox>
-
-          <LiveResizableBox
-            boxKey="footer.top.contact.box"
-            initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.top.contact.box')}
-            isAdmin={isAdmin}
-            lockHorizontal
-            className="rounded-[1.4rem] border border-white/10 bg-[linear-gradient(180deg,rgba(22,14,10,0.92)_0%,rgba(10,7,5,0.85)_100%)] p-6 shadow-[0_18px_40px_rgba(0,0,0,0.22)]"
-          >
-            <h2 className="section-title break-words text-left text-[1.05rem] leading-[0.98] sm:text-[1.25rem] xl:text-[1.4rem]">{content.contactHeading}</h2>
-            <div className="mt-5 flex flex-col gap-3">
-              {footerContactLinks.map((link) => (
-                <a key={`${link.id || link.href}-${link.label}`} href={link.href} className="link-copy text-sm font-semibold transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-background)]">
-                  {link.label}
-                </a>
-              ))}
-              {resolvedContactEmail ? (
-                <a href={`mailto:${resolvedContactEmail}`} className="link-copy text-sm font-semibold transition-colors hover:text-white focus:outline-none focus:ring-2 focus:ring-[color:var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[color:var(--color-background)]">
-                  {resolvedContactEmail}
-                </a>
-              ) : null}
-            </div>
-          </LiveResizableBox>
-        </div>
+              return (
+                <li key={row.key}>
+                  <a
+                    href={row.href}
+                    target={opensNewTab ? '_blank' : undefined}
+                    rel={opensNewTab ? 'noreferrer noopener' : undefined}
+                    className="group inline-flex max-w-full items-center gap-3 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--color-background)]"
+                  >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-surface-2)_92%,black)_0%,color-mix(in_srgb,var(--color-surface)_76%,black)_100%)] text-[color:var(--text-link)] ring-1 ring-[color:var(--color-border)] transition-all group-hover:ring-[color:var(--color-accent)]">
+                      <row.Icon className="h-5 w-5" />
+                    </span>
+                    {/* Farbe per Utility statt .link-copy: die Klasse steht ohne Layer, group-hover würde nicht greifen. */}
+                    <span className="min-w-0 text-sm font-semibold text-[color:var(--text-link)] [overflow-wrap:anywhere] transition-colors group-hover:text-white">
+                      {row.srPrefix ? <span className="sr-only">{row.srPrefix}</span> : null}
+                      {row.text}
+                      {opensNewTab ? <span className="sr-only"> (öffnet in neuem Tab)</span> : null}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </LiveResizableBox>
 
         <div className="mt-8 flex w-full justify-center">
           <LiveResizableBox
@@ -276,6 +187,7 @@ export function Footer({
             initialStyle={resolveLiveBoxStyle(liveEditor, 'footer.legal.box')}
             isAdmin={isAdmin}
             lockHorizontal
+            growWithContent
             className="w-full"
           >
             <div className="body-copy flex w-full flex-wrap items-center justify-center gap-x-5 gap-y-3 border-t border-[color:var(--color-border)] pt-5 text-center text-sm">
@@ -286,7 +198,6 @@ export function Footer({
               <a href="/impressum" className="link-copy transition-colors">Impressum</a>
               <a href="/datenschutz" className="link-copy transition-colors">Datenschutz</a>
               <a href="/agb" className="link-copy transition-colors">AGB</a>
-              <a href="/kontakt" className="link-copy transition-colors">Kontakt</a>
             </div>
           </LiveResizableBox>
         </div>
