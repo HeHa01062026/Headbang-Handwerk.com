@@ -295,8 +295,14 @@ Zollhaus-Bestellungen verschicken nach erfolgreicher Speicherung best-effort ein
 | `/datenschutz` | Datenschutz |
 | `/agb` | AGB |
 
-## Rechtlicher Hinweis.
+## Rechtlicher Hinweis
 
-Headbang Handwerk ist kein eingetragener gemeinnütziger Verein. Steuerlich absetzbare
-Spendenquittungen können nicht ausgestellt werden. Bei Sponsoring-Zahlungen wird eine
-Zahlungsbestätigung ausgestellt.
+Headbang Handwerk ist als gemeinnütziger Verein anerkannt (Bescheid des Finanzamts vom
+18.06.2026).
+
+Die Website stellt trotzdem keine Zuwendungsbestätigungen (Spendenquittungen) aus:
+
+- Sponsoring und Merchandise sind keine Spenden, weil ihnen eine Gegenleistung gegenübersteht
+  (Logo, Bannerfläche, Ware). Dafür gibt es eine Zahlungsbestätigung.
+- Zuwendungsbestätigungen für echte Spenden müssen dem amtlichen Muster folgen und werden nicht
+  automatisch aus dem Code erzeugt.

@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * RECHTLICHER HINWEIS:
- * Headbang Handwerk ist kein eingetragener gemeinnütziger Verein (e.V.).
- * Steuerlich absetzbare Spendenquittungen gemäß § 10b EStG können daher
- * nicht ausgestellt werden. Diese Route erstellt nur eine einfache
- * Zahlungsbestätigung für Buchhaltungszwecke.
+ * Headbang Handwerk ist als gemeinnütziger Verein anerkannt (Bescheid des
+ * Finanzamts vom 18.06.2026). Diese Route erstellt trotzdem nur eine einfache
+ * Zahlungsbestätigung für Buchhaltungszwecke und keine Zuwendungsbestätigung
+ * nach § 10b EStG: Sponsoring ist wegen der Gegenleistung keine Spende, und
+ * Zuwendungsbestätigungen müssen dem amtlichen Muster folgen.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
       date: new Date().toLocaleDateString('de-DE'),
       purpose: 'Sponsoring – Headbang Handwerk Festival-Saison 2025',
       disclaimer:
-        'Diese Zahlungsbestätigung ist keine steuerlich absetzbare Spendenquittung im Sinne des § 10b EStG. Headbang Handwerk ist kein eingetragener gemeinnütziger Verein.',
+        'Diese Zahlungsbestätigung ist keine Zuwendungsbestätigung (Spendenquittung) im Sinne des § 10b EStG. Sponsoring-Zahlungen sind wegen der Gegenleistung keine Spenden.',
     };
 
     // TODO: Generate PDF and send via email
