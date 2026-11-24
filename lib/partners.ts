@@ -3,7 +3,9 @@ import type { SponsorPackage } from '@/lib/types';
 
 export const PARTNER_KIND_LABELS: Record<PartnerKind, string> = {
   sponsor: 'Sponsor',
-  cooperation: 'Kooperationspartner',
+  // Sichtbare Bezeichnung „Projektpartner“; der interne Wert 'cooperation'
+  // bleibt erhalten, damit gespeicherte Zuordnungen weiter funktionieren.
+  cooperation: 'Projektpartner',
   network: 'Netzwerkkooperationspartner',
 };
 

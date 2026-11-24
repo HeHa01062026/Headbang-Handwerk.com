@@ -53,7 +53,7 @@ function getAdminErrorMessage(adminError?: string) {
   }
 
   if (adminError === 'missing-partner-kind') {
-    return 'Bitte eine Partnerart wählen: Sponsor, Kooperationspartner oder Netzwerkkooperationspartner.';
+    return 'Bitte eine Partnerart wählen: Sponsor, Projektpartner oder Netzwerkkooperationspartner.';
   }
 
   if (adminError === 'missing-sponsor-package') {
@@ -142,8 +142,8 @@ export default async function UnserePartnerPage({
 
   const jumpLinks = [
     ...(sponsorJumpHref ? [{ href: sponsorJumpHref, label: 'Sponsoren' }] : []),
-    ...(grouped.cooperation.length ? [{ href: '#kooperationspartner', label: 'Kooperationspartner' }] : []),
-    ...(grouped.network.length ? [{ href: '#netzwerkkooperationspartner', label: 'Netzwerkkooperationspartner' }] : []),
+    ...(grouped.cooperation.length ? [{ href: '#kooperationspartner', label: PARTNER_KIND_LABELS.cooperation }] : []),
+    ...(grouped.network.length ? [{ href: '#netzwerkkooperationspartner', label: PARTNER_KIND_LABELS.network }] : []),
     ...(grouped.unassigned.length ? [{ href: '#weitere-partner', label: 'Weitere Partner' }] : []),
   ];
 
@@ -313,7 +313,7 @@ export default async function UnserePartnerPage({
 
           {grouped.cooperation.length ? (
             <section id="kooperationspartner" aria-labelledby="kooperationspartner-heading" className="section-shell content-box scroll-mt-32 sm:p-8">
-              <h2 id="kooperationspartner-heading" className="section-title text-center text-[1.9rem] sm:text-[2.2rem]">Kooperationspartner</h2>
+              <h2 id="kooperationspartner-heading" className="section-title text-center text-[1.9rem] sm:text-[2.2rem]">{PARTNER_KIND_LABELS.cooperation}</h2>
               <PartnerGroupGrid partners={grouped.cooperation} />
             </section>
           ) : null}

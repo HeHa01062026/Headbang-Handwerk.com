@@ -145,8 +145,11 @@ export function Navigation({
               />
             </a>
 
-            <div className="hidden min-w-0 flex-1 items-center justify-end gap-3 lg:flex">
-              <div className="flex min-w-0 items-center gap-2 xl:gap-3">
+            {/* Rechter Bereich: darf umbrechen, damit Navigationslinks und
+                Admin-Schaltflächen nie übereinander liegen. Reicht die Breite
+                nicht, wandern Nutzeransicht/Logout auf eine zweite Zeile. */}
+            <div className="hidden min-w-0 flex-1 flex-wrap items-center justify-end gap-x-3 gap-y-2 lg:flex">
+              <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 xl:gap-3">
                 {primaryLinks.map((link) => (
                   <a
                     key={link.id || link.href}
@@ -213,17 +216,17 @@ export function Navigation({
 
               <div className="flex shrink-0 items-center gap-2 xl:gap-3">
                 {showAdminLink ? (
-                  <Button href={adminHref} size="sm" variant="secondary" className="hidden min-w-32 xl:inline-flex">
+                  <Button href={adminHref} size="sm" variant="secondary" className="min-w-32">
                     Admin
                   </Button>
                 ) : null}
                 {showViewToggle ? (
-                  <Button href={viewToggleHref} size="sm" variant="secondary" className="hidden min-w-36 xl:inline-flex">
+                  <Button href={viewToggleHref} size="sm" variant="secondary" className="min-w-36">
                     {viewToggleLabel}
                   </Button>
                 ) : null}
                 {showLogout && logoutAction ? (
-                  <form action={logoutAction} className="hidden xl:block">
+                  <form action={logoutAction}>
                     <Button type="submit" size="sm" variant="secondary" className="min-w-32">
                       Logout
                     </Button>
