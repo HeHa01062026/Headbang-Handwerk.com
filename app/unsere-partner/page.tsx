@@ -53,7 +53,7 @@ function getAdminErrorMessage(adminError?: string) {
   }
 
   if (adminError === 'missing-partner-kind') {
-    return 'Bitte eine Partnerart wählen: Sponsor, Projektpartner oder Netzwerkkooperationspartner.';
+    return 'Bitte eine Partnerart wählen: Sponsor, Projektpartner oder Netzwerkpartner.';
   }
 
   if (adminError === 'missing-sponsor-package') {
@@ -320,7 +320,7 @@ export default async function UnserePartnerPage({
 
           {grouped.network.length ? (
             <section id="netzwerkkooperationspartner" aria-labelledby="netzwerkkooperationspartner-heading" className="section-shell content-box scroll-mt-32 sm:p-8">
-              <h2 id="netzwerkkooperationspartner-heading" className="section-title text-center text-[1.9rem] sm:text-[2.2rem]">Netzwerkkooperationspartner</h2>
+              <h2 id="netzwerkkooperationspartner-heading" className="section-title text-center text-[1.9rem] sm:text-[2.2rem]">{PARTNER_KIND_LABELS.network}</h2>
               <PartnerGroupGrid partners={grouped.network} />
             </section>
           ) : null}

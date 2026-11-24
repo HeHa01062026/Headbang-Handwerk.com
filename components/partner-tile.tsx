@@ -3,6 +3,7 @@
 import { useCallback, useRef } from 'react';
 import { Globe2, X } from 'lucide-react';
 import type { PartnerEntry } from '@/lib/cms/schema';
+import { PARTNER_KIND_LABELS } from '@/lib/partners';
 import { isExternalUrl } from '@/lib/site';
 import { normalizePartnerLogoBoxOpacity } from '@/lib/utils';
 
@@ -141,6 +142,12 @@ export function PartnerTile({ partner, size, fill = false }: { partner: PartnerE
           </div>
 
           <h3 className="mt-5 text-center text-xl font-black text-white sm:text-2xl">{partner.name}</h3>
+
+          {partner.kind ? (
+            <p className="mt-2 text-center text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--color-accent-soft)]">
+              {PARTNER_KIND_LABELS[partner.kind]}
+            </p>
+          ) : null}
 
           {partner.description ? (
             <p className="body-copy mt-4 text-center text-sm leading-7">{partner.description}</p>
