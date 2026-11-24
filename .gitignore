@@ -26,3 +26,10 @@ yarn-error.log*
 # Vercel
 .vercel
 .env*
+
+# Claude Code
+CLAUDE.md
+.claude/
+
+# Lokale Referenzdokumente
+Buttons – Material Design 3.pdf

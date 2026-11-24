@@ -598,7 +598,7 @@ test('serverseitige Preisberechnung ignoriert manipulierte Browserpreise', async
 });
 
 test('produktive Checkout-Route invalidiert nach erfolgreicher Bestellung die Zollhaus-Ansichten', () => {
-  const routeSource = readFileSync('/workspaces/Headbang-Handwerk.com/app/api/zollhaus/checkout/route.ts', 'utf8');
+  const routeSource = readFileSync(new URL('../app/api/zollhaus/checkout/route.ts', import.meta.url), 'utf8');
 
   assert.equal(routeSource.includes('revalidatePath'), true);
   assert.equal(routeSource.includes('/zollhaus'), true);
@@ -831,8 +831,8 @@ test('Produktbild-Löschpfade werden nur für das passende Produkt akzeptiert', 
 });
 
 test('Adminseite enthält starke Bestätigungen für Entfernen und Wiederherstellen', () => {
-  const adminPageSource = readFileSync('/workspaces/Headbang-Handwerk.com/app/zollhaus/admin/page.tsx', 'utf8');
-  const adminActionSource = readFileSync('/workspaces/Headbang-Handwerk.com/app/zollhaus/admin/actions.ts', 'utf8');
+  const adminPageSource = readFileSync(new URL('../app/zollhaus/admin/page.tsx', import.meta.url), 'utf8');
+  const adminActionSource = readFileSync(new URL('../app/zollhaus/admin/actions.ts', import.meta.url), 'utf8');
 
   assert.equal(adminPageSource.includes('deleteProductNameConfirmation'), true);
   assert.equal(adminPageSource.includes('Produkt als inaktiv wiederherstellen'), true);

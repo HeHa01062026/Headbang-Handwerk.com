@@ -25,7 +25,7 @@ export default async function CheckoutPage({
       <Suspense fallback={<div className="body-copy min-h-screen bg-[#0a0a0a] pt-24 flex items-center justify-center">Laden...</div>}>
         <CheckoutClient sponsorPackages={cms.site.sponsorPackages} />
       </Suspense>
-      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} logoSrc={cms.site.logo.assetUrl} contactEmail={cms.site.contact.email} />
+      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
     </>
   );
 }

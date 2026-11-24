@@ -16,9 +16,16 @@ interface LiveResizableBoxProps {
   allowPosition?: boolean;
   applySavedHeight?: boolean;
   growWithContent?: boolean;
+  /**
+   * Für Bereiche, die die volle Spaltenbreite einnehmen sollen: Gespeicherte Breite und
+   * horizontale Verschiebung werden ignoriert (Desktop und Mobil), damit alle Bereiche
+   * bündig untereinander stehen. Vertikal verschieben und die Höhe ändern bleibt möglich.
+   * Beim nächsten Speichern werden alte Breiten- und x-Werte aus den CMS-Daten entfernt.
+   */
+  lockHorizontal?: boolean;
 }
 
-export function LiveResizableBox({ boxKey, className, children, initialStyle, isAdmin, allowPosition = true, applySavedHeight = true, growWithContent = false }: LiveResizableBoxProps) {
+export function LiveResizableBox({ boxKey, className, children, initialStyle, isAdmin, allowPosition = true, applySavedHeight = true, growWithContent = false, lockHorizontal = false }: LiveResizableBoxProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [viewport, setViewport] = useState<LiveViewport>('desktop');
@@ -48,16 +55,18 @@ export function LiveResizableBox({ boxKey, className, children, initialStyle, is
     const mobileStyle = styles?.mobile;
     const desktopStyle = styles?.desktop;
 
+    const allowHorizontalPosition = allowPosition && !lockHorizontal;
+
     const nextStyle = {
-      '--live-box-width-desktop': desktopStyle?.width ?? 'auto',
+      '--live-box-width-desktop': lockHorizontal ? '100%' : desktopStyle?.width ?? 'auto',
       '--live-box-height-desktop': applySavedHeight && !growWithContent ? desktopStyle?.height ?? 'auto' : 'auto',
       '--live-box-min-height-desktop': applySavedHeight ? desktopStyle?.minHeight ?? (growWithContent ? desktopStyle?.height : undefined) ?? 'auto' : 'auto',
-      '--live-box-offset-x-desktop': allowPosition ? desktopStyle?.x ?? '0px' : '0px',
+      '--live-box-offset-x-desktop': allowHorizontalPosition ? desktopStyle?.x ?? '0px' : '0px',
       '--live-box-offset-y-desktop': allowPosition ? desktopStyle?.y ?? '0px' : '0px',
-      '--live-box-width-mobile': mobileStyle?.width ?? '100%',
+      '--live-box-width-mobile': lockHorizontal ? '100%' : mobileStyle?.width ?? '100%',
       '--live-box-height-mobile': applySavedHeight && !growWithContent ? mobileStyle?.height ?? 'auto' : 'auto',
       '--live-box-min-height-mobile': applySavedHeight ? mobileStyle?.minHeight ?? (growWithContent ? mobileStyle?.height : undefined) ?? 'auto' : 'auto',
-      '--live-box-offset-x-mobile': allowPosition ? mobileStyle?.x ?? '0px' : '0px',
+      '--live-box-offset-x-mobile': allowHorizontalPosition ? mobileStyle?.x ?? '0px' : '0px',
       '--live-box-offset-y-mobile': allowPosition ? mobileStyle?.y ?? '0px' : '0px',
       '--live-box-overflow-x-correction': `${mobileOverflowCorrection}px`,
       maxWidth: growWithContent || viewport === 'mobile' ? '100%' : undefined,
@@ -67,8 +76,11 @@ export function LiveResizableBox({ boxKey, className, children, initialStyle, is
     return nextStyle;
   }
 
-  function queueSave(style: { width?: string; height?: string; minHeight?: string; x?: string; y?: string }, targetViewport: LiveViewport) {
+  function queueSave(rawStyle: { width?: string; height?: string; minHeight?: string; x?: string; y?: string }, targetViewport: LiveViewport) {
     const storageKey = getStorageKey(targetViewport);
+    // Gesperrte Boxen speichern weder Breite noch x – der Server ersetzt den Stil komplett,
+    // dadurch verschwinden auch alte Werte.
+    const style = lockHorizontal ? { ...rawStyle, width: undefined, x: undefined } : rawStyle;
 
     if (liveLayoutSave) {
       liveLayoutSave.setPendingStyle(storageKey, style);
@@ -405,7 +417,17 @@ export function LiveResizableBox({ boxKey, className, children, initialStyle, is
       ref={ref}
       className={`live-resizable-box relative mx-auto w-full min-h-0 min-w-0 self-start justify-self-stretch${growWithContent ? ' flex flex-col' : ''}`}
       style={buildResponsiveStyle(boxStyles)}
-      title={isAdmin ? allowPosition ? 'Klick zum Bearbeiten, unten rechts Größe ändern, oben mittig verschieben' : 'Klick zum Bearbeiten, unten rechts Größe ändern' : undefined}
+      title={
+        isAdmin
+          ? lockHorizontal
+            ? allowPosition
+              ? 'Klick zum Bearbeiten, unten rechts Höhe ändern, oben mittig nach oben/unten verschieben (Breite folgt der Spalte)'
+              : 'Klick zum Bearbeiten, unten rechts Höhe ändern (Breite folgt der Spalte)'
+            : allowPosition
+              ? 'Klick zum Bearbeiten, unten rechts Größe ändern, oben mittig verschieben'
+              : 'Klick zum Bearbeiten, unten rechts Größe ändern'
+          : undefined
+      }
     >
       {isAdmin && allowPosition ? (
         <button
@@ -421,7 +443,7 @@ export function LiveResizableBox({ boxKey, className, children, initialStyle, is
       <div className={`relative ${growWithContent ? 'flex-1' : 'h-full'} w-full overflow-x-hidden ${className}`}>
         {children}
       </div>
-      {isAdmin && applySavedHeight ? (
+      {isAdmin && applySavedHeight && !lockHorizontal ? (
         <button
           type="button"
           onPointerDown={handleWidthResizeStart}
