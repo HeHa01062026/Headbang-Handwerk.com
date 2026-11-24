@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { SiteNavigation } from '@/components/site-navigation';
 import { Footer } from '@/components/footer';
+import { groupPartners } from '@/lib/partners';
 import { isAdminAuthenticated } from '@/lib/cms/auth';
 import { getCmsContent } from '@/lib/cms/storage';
 import { CheckoutClient } from './checkout-client';
@@ -25,7 +26,7 @@ export default async function CheckoutPage({
       <Suspense fallback={<div className="body-copy min-h-screen bg-[#0a0a0a] pt-24 flex items-center justify-center">Laden...</div>}>
         <CheckoutClient sponsorPackages={cms.site.sponsorPackages} />
       </Suspense>
-      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
+      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} sponsorGroups={groupPartners(cms.site.partners, cms.site.sponsorPackages).footerSponsorGroups} />
     </>
   );
 }

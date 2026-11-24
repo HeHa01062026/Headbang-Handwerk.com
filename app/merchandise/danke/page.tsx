@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { SiteNavigation } from '@/components/site-navigation';
 import { Footer } from '@/components/footer';
+import { groupPartners } from '@/lib/partners';
 import { Button } from '@/components/ui/button';
 import { isAdminAuthenticated } from '@/lib/cms/auth';
 import { getCmsContent } from '@/lib/cms/storage';
@@ -41,7 +42,7 @@ export default async function MerchandiseDankePage({
           </div>
         </div>
       </main>
-      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
+      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} sponsorGroups={groupPartners(cms.site.partners, cms.site.sponsorPackages).footerSponsorGroups} />
     </>
   );
 }

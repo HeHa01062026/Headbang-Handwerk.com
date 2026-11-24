@@ -310,6 +310,8 @@ export interface GalleryPageContent {
   folders: GalleryFolder[];
 }
 
+export type PartnerKind = 'sponsor' | 'cooperation' | 'network';
+
 export interface PartnerEntry {
   id: string;
   name: string;
@@ -318,6 +320,10 @@ export interface PartnerEntry {
   logo: MediaAsset;
   logoBoxBackground?: string;
   logoBoxOpacity?: number;
+  /** Fehlt bei Alt-Datensätzen: Eintrag gilt als "Noch nicht zugeordnet". */
+  kind?: PartnerKind;
+  /** Nur bei kind === 'sponsor': ID eines Pakets aus site.sponsorPackages. */
+  sponsorPackageId?: string;
 }
 
 export interface SeoContent {

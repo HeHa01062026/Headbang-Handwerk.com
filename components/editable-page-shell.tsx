@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { CmsContent } from '@/lib/cms/schema';
 import { logoutAction } from '@/app/admin/actions';
+import { groupPartners } from '@/lib/partners';
 import { Footer } from './footer';
 import { LiveLayoutSaveProvider } from './live-layout-save-context';
 import { SiteNavigation } from './site-navigation';
@@ -39,7 +40,13 @@ export function EditablePageShell({ cms, isAdmin, mainClassName, children }: Edi
           ) : null}
           <div className="site-shell">{children}</div>
         </main>
-        <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
+        <Footer
+          content={cms.site.footer}
+          isAdmin={isAdmin}
+          liveEditor={cms.site.liveEditor}
+          contactEmail={cms.site.contact.email}
+          sponsorGroups={groupPartners(cms.site.partners, cms.site.sponsorPackages).footerSponsorGroups}
+        />
       </LiveLayoutSaveProvider>
     </>
   );

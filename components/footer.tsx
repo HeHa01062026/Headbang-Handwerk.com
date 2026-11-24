@@ -3,9 +3,11 @@ import { Facebook, Form as FormIcon, Instagram, Mail } from 'lucide-react';
 import { updateFooterAction } from '@/app/admin/chrome-actions';
 import type { FooterContent, LiveEditorContent } from '@/lib/cms/schema';
 import { resolveLiveHtml, resolveLiveBoxStyle } from '@/lib/cms/live-editor';
+import type { SponsorPackageGroup } from '@/lib/partners';
 import { isExternalUrl, normalizeSafeSocialUrl } from '@/lib/site';
 import { LiveEditableText } from './live-editable-text';
 import { LiveResizableBox } from './live-resizable-box';
+import { PartnerTile } from './partner-tile';
 
 function TikTokIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -84,11 +86,14 @@ export function Footer({
   isAdmin = false,
   liveEditor,
   contactEmail,
+  sponsorGroups = [],
 }: {
   content: FooterContent;
   isAdmin?: boolean;
   liveEditor?: LiveEditorContent;
   contactEmail?: string;
+  /** Sponsoren der Footer-Stufe (z. B. Bühnenbauer): kleine Logos im Footer. */
+  sponsorGroups?: SponsorPackageGroup[];
 }) {
   const year = new Date().getFullYear();
   const resolvedContactEmail = (content.contactEmail || contactEmail || '').trim();
@@ -180,6 +185,23 @@ export function Footer({
             })}
           </ul>
         </LiveResizableBox>
+
+        {sponsorGroups.length ? (
+          // Bühnenbauer-Sponsoren: kleine Logos im Footer. Der Bereich erscheint
+          // nur, wenn mindestens ein Sponsor dieser Stufe vorhanden ist.
+          <section id="footer-sponsoren" aria-label="Sponsoren im Footer" className="mt-8 scroll-mt-32 space-y-6 rounded-[1.4rem] border border-white/10 bg-black/15 p-5">
+            {sponsorGroups.map((group) => (
+              <div key={group.package.id}>
+                <h2 className="text-sm font-black uppercase tracking-[0.18em] text-[color:var(--color-accent-soft)]">{group.package.name}</h2>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                  {group.partners.map((partner) => (
+                    <PartnerTile key={partner.id} partner={partner} size="footer" />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </section>
+        ) : null}
 
         <div className="mt-8 flex w-full justify-center">
           <LiveResizableBox

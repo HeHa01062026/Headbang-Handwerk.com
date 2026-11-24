@@ -1,5 +1,6 @@
 import { SiteNavigation } from '@/components/site-navigation';
 import { Footer } from '@/components/footer';
+import { groupPartners } from '@/lib/partners';
 import { isAdminAuthenticated } from '@/lib/cms/auth';
 import { getCmsContent } from '@/lib/cms/storage';
 import { MerchandiseCheckoutClient } from './checkout-client';
@@ -18,7 +19,7 @@ export default async function MerchandiseCheckoutPage({
     <>
       <SiteNavigation links={cms.site.navigationLinks} ctaLabel={cms.site.navigationCtaLabel} ctaHref={cms.site.navigationCtaHref} />
       <MerchandiseCheckoutClient products={cms.site.merchandise.products} />
-      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
+      <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} sponsorGroups={groupPartners(cms.site.partners, cms.site.sponsorPackages).footerSponsorGroups} />
     </>
   );
 }

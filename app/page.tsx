@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { ArrowRight, CalendarDays, EyeOff, ImageIcon, MapPin, Newspaper, Users2 } from 'lucide-react';
 import { SiteNavigation } from '@/components/site-navigation';
 import { Footer } from '@/components/footer';
+import { groupPartners } from '@/lib/partners';
 import { LiveLayoutSaveProvider } from '@/components/live-layout-save-context';
 import { LiveResizableBox } from '@/components/live-resizable-box';
 import { ConfirmSubmitButton } from '@/components/confirm-submit-button';
@@ -678,7 +679,7 @@ export default async function HomePage({
             </LiveResizableBox>
           </div>
         </main>
-        <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} />
+        <Footer content={cms.site.footer} isAdmin={isAdmin} liveEditor={cms.site.liveEditor} contactEmail={cms.site.contact.email} sponsorGroups={groupPartners(cms.site.partners, cms.site.sponsorPackages).footerSponsorGroups} />
       </LiveLayoutSaveProvider>
     </>
   );

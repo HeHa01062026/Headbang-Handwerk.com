@@ -12,6 +12,7 @@ import {
 import { hasFirebaseConfig, isFirebaseAuthError, isInvalidFirebaseConfigError } from '@/lib/cms/firebase';
 import { getCmsContent, isFirebaseAuthSaveError, isInvalidFirebaseSaveError, isReadonlyFallbackError, saveCmsContent } from '@/lib/cms/storage';
 import type { CmsContent, PartnerEntry } from '@/lib/cms/schema';
+import { normalizePartnerKind } from '@/lib/partners';
 import { normalizeExternalUrl } from '@/lib/site';
 import { normalizePartnerLogoBoxOpacity } from '@/lib/utils';
 
@@ -59,6 +60,8 @@ function ensurePartnerId(partners: PartnerEntry[], requestedId: string, name: st
 
 function parsePartnerFromFormData(formData: FormData, existing?: PartnerEntry): PartnerEntry {
   const logoBoxBackground = sanitizeText(formData.get('logoBoxBackground')) || existing?.logoBoxBackground || '#3a2718';
+  const kind = normalizePartnerKind(formData.get('kind'));
+  const sponsorPackageId = sanitizeText(formData.get('sponsorPackageId'));
 
   return {
     id: existing?.id || '',
@@ -76,7 +79,23 @@ function parsePartnerFromFormData(formData: FormData, existing?: PartnerEntry): 
       assetName: '',
       assetContentType: '',
     },
+    ...(kind ? { kind } : {}),
+    // Nur Sponsoren tragen ein Paket. Beim Wechsel zu einer anderen
+    // Partnerart wird das Sponsoringpaket aus dem Datensatz entfernt.
+    ...(kind === 'sponsor' && sponsorPackageId ? { sponsorPackageId } : {}),
   };
+}
+
+function validatePartnerKind(partner: PartnerEntry, current: CmsContent) {
+  if (!partner.kind) {
+    redirect('/unsere-partner?adminError=missing-partner-kind');
+  }
+
+  if (partner.kind === 'sponsor') {
+    if (!partner.sponsorPackageId || !current.site.sponsorPackages.some((pkg) => pkg.id === partner.sponsorPackageId)) {
+      redirect('/unsere-partner?adminError=missing-sponsor-package');
+    }
+  }
 }
 
 async function assertAdmin() {
@@ -139,6 +158,8 @@ export async function addPartnerAction(formData: FormData) {
     redirect('/unsere-partner?adminError=missing-partner-fields');
   }
 
+  validatePartnerKind(partner, current);
+
   const logoFile = formData.get('logoFile');
 
   if (logoFile instanceof File && logoFile.size > 0) {
@@ -183,6 +204,13 @@ export async function updatePartnerAction(formData: FormData) {
   }
 
   const nextPartner = parsePartnerFromFormData(formData, existingPartner);
+
+  if (!nextPartner.name || !nextPartner.description) {
+    redirect('/unsere-partner?adminError=missing-partner-fields');
+  }
+
+  validatePartnerKind(nextPartner, current);
+
   const removeLogo = String(formData.get('removeLogo') || '') === 'on';
   const logoFile = formData.get('logoFile');
 
@@ -215,7 +243,7 @@ export async function updatePartnerAction(formData: FormData) {
     ...current,
     site: {
       ...current.site,
-      partners: current.site.partners.map((partner) => (partner.id === partnerId ? { ...existingPartner, ...nextPartner } : partner)),
+      partners: current.site.partners.map((partner) => (partner.id === partnerId ? nextPartner : partner)),
     },
   }));
 

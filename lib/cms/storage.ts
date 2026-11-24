@@ -18,6 +18,7 @@ import {
   normalizeSafeText,
 } from '@/lib/site';
 import { normalizeHomeContent as normalizeStructuredHomeContent } from '@/lib/home';
+import { normalizePartnerKind } from '@/lib/partners';
 import { emptyLiveEditorContent } from './live-editor';
 import type { CmsContent, FooterSocialLink, GalleryFolder, GalleryImage, MediaAsset } from './schema';
 
@@ -266,6 +267,9 @@ function normalizePartnerEntry(partner: unknown) {
     return null;
   }
 
+  const kind = normalizePartnerKind(candidate.kind);
+  const sponsorPackageId = String(candidate.sponsorPackageId ?? '').trim();
+
   return {
     id,
     name,
@@ -274,6 +278,8 @@ function normalizePartnerEntry(partner: unknown) {
     logo: normalizeMediaAsset(candidate.logo),
     ...(logoBoxBackground ? { logoBoxBackground } : {}),
     ...(Number.isFinite(rawOpacity) ? { logoBoxOpacity: Math.min(100, Math.max(0, Math.round(rawOpacity))) } : {}),
+    ...(kind ? { kind } : {}),
+    ...(kind === 'sponsor' && sponsorPackageId ? { sponsorPackageId } : {}),
   };
 }
 
